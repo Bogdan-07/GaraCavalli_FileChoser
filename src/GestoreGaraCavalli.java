@@ -1,75 +1,78 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import javax.swing.JFileChooser;
 
-/**
- * Classe GaraCavalliAzzoppati_Crisan.GestoreGaraCavalli
- * @version 1.0
- * @author Crisan Bogdan
- * <p>
- * Gestisce la gara tra più cavalli.
- * Permette di inserire i cavalli, avviare la corsa
- * e determinare il vincitore.
- */
 public class GestoreGaraCavalli {
 
-    /** Nome del primo cavallo che termina la corsa */
-    static String primo="";
+    static String primo = "";
 
-    /**
-     * Metodo principale: gestisce input da tastiera,
-     * avvia la gara e visualizza il cavallo vincitore.
-     */
     public static void main(String[] args) {
+
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showSaveDialog(null);
+
+        if (result != JFileChooser.APPROVE_OPTION) {
+            System.out.println("Nessun file selezionato. Uscita.");
+            System.exit(-1);
+        }
+
+        File fileOutput = fileChooser.getSelectedFile();
+
         Scanner input = new Scanner(System.in);
-        String tmpS;
-        int tmp;
-        ArrayList<Cavallo> listaCavallo = new ArrayList<Cavallo>();
+        ArrayList<Cavallo> cavalli = new ArrayList<>();
+
 
         for (int i = 1; i <= 5; i++) {
             System.out.println("Inserisci il nome del cavallo " + i);
-            tmpS =  input.nextLine();
+            String nome = input.nextLine();
+
             System.out.println("Inserisci la lentezza del cavallo " + i);
-            tmp = input.nextInt();
-            String v = input.nextLine(); // prende il \n
-            Cavallo c=new Cavallo(tmpS, tmp);
-            listaCavallo.add(c);
+            int lentezza = input.nextInt();
+            input.nextLine();
+
+            cavalli.add(new Cavallo(nome, lentezza, fileOutput));
         }
 
-        // Selezione casuale di un cavallo che verrà interrotto (azzoppato)
-        int a = (int)(Math.random() / 0.2);
-        Cavallo x = listaCavallo.get(a);
-        listaCavallo.remove(a);
-        x.interrupt();
-        System.out.println("GaraCavalliAzzoppati_Crisan.Cavallo azzoppato: " + x.getNomeCavallo());
+        int a = (int)(Math.random() * cavalli.size());
+        Cavallo azz = cavalli.get(a);
+        cavalli.remove(a);
+        azz.interrupt();
 
-        // Avvio di tutti i cavalli restanti
-        for(Cavallo c: listaCavallo){
+        try {
+            FileWriter fw = new FileWriter(fileOutput, true);
+            fw.write("Cavallo azzoppato: " + azz.getNomeCavallo() + "\n");
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        for (Cavallo c : cavalli) {
             c.start();
         }
 
-        // Attesa della fine di tutti i thread
-        for(Cavallo c: listaCavallo){
+        for (Cavallo c : cavalli) {
             try {
                 c.join();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }
 
-        System.out.println("Il primo cavallo: " + primo);
+        try {
+            FileWriter fw = new FileWriter(fileOutput, true);
+            fw.write("\nVincitore: " + primo + "\n");
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Risultati salvati in: " + fileOutput.getAbsolutePath());
     }
 
-    /**
-     * Restituisce il nome del cavallo vincitore.
-     */
-    public static String getPrimo() {
-        return primo;
-    }
-
-    /**
-     * Imposta il nome del cavallo vincitore.
-     */
-    public static void setPrimo(String primo) {
-        GestoreGaraCavalli.primo = primo;
-    }
+    public static String getPrimo() { return primo; }
+    public static void setPrimo(String p) { primo = p; }
 }
